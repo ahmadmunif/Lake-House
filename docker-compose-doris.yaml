@@ -1,0 +1,72 @@
+services:
+  fe:
+    image: apache/doris:fe-4.0.2
+    hostname: fe
+    container_name: doris-fe-1
+    extra_hosts:
+      - "polaris.local:172.20.80.61"
+    ports:
+      - "8030:8030"
+      - "9030:9030"
+      - "9010:9010"
+    environment:
+      # Disamakan label 'fe1' dengan IP-nya
+      - FE_SERVERS=fe1:172.20.80.2:9010
+      - FE_ID=1
+      - CURRENT_FE_IP=172.20.80.2
+      - ENABLE_FQDN=false # Nonaktifkan FQDN agar fokus ke IP Static
+    volumes:
+      - ./doris-meta:/opt/apache-doris/fe/doris-meta
+      - ./fe-log:/opt/apache-doris/fe/log
+    networks:
+      data_net:
+        ipv4_address: 172.20.80.2
+  be:
+    image: apache/doris:be-4.0.2
+    hostname: be
+    container_name: doris-be-1
+    extra_hosts:
+      - "polaris.local:172.20.80.61"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        # 1. Paksa parameter di file config
+        sed -i 's/check_swappiness = true/check_swappiness = false/g' /opt/apache-doris/be/conf/be.conf
+        echo "check_swappiness = false" >> /opt/apache-doris/be/conf/be.conf
+        echo "priority_networks = 172.20.80.0/24" >> /opt/apache-doris/be/conf/be.conf
+        
+        # 2. Siapkan log agar tail tidak mati
+        mkdir -p /opt/apache-doris/be/log
+        touch /opt/apache-doris/be/log/be.out
+        
+        # 3. Jalankan BE (tanpa daemon agar kita bisa lihat log langsung jika crash)
+        export SKIP_CHECK_SWAP=true
+        /opt/apache-doris/be/bin/start_be.sh
+    ports:
+      - "8040:8040"
+      - "9050:9050"
+      - "8060:8060"
+    environment:
+      - FE_SERVERS=fe1:172.20.80.2:9010
+      - BE_ADDR=172.20.80.3:9050
+      - CURRENT_BE_IP=172.20.80.3
+      - SKIP_CHECK_SWAP=true
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65536
+        hard: 65536
+    privileged: true
+    depends_on:
+      - fe
+    volumes:
+      - ./be-storage:/opt/apache-doris/be/storage
+      - ./be-log:/opt/apache-doris/be/log
+    networks:
+      data_net:
+        ipv4_address: 172.20.80.3
+
+networks:
+  data_net:
+    external: true

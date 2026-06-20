@@ -1,0 +1,19 @@
+services:
+  seatunnel:
+    image: apache/seatunnel:2.3.12
+    container_name: seatunnel
+    entrypoint: ["/bin/sh", "-c", "sleep infinity"]
+    volumes:
+      - ./seatunnel-config/jobs:/opt/seatunnel/config/jobs
+      - ./seatunnel-connectors:/opt/seatunnel/connectors/seatunnel
+      - ./libs:/opt/seatunnel/lib  
+      
+    networks:
+      data_net:
+        ipv4_address: 172.20.80.20
+    # Tetap berjalan agar bisa kita gunakan via 'docker exec'
+    command: ["/bin/sh", "-c", "sleep infinity"]
+
+networks:
+  data_net:
+    external: true
