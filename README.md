@@ -148,6 +148,8 @@ Selain itu Apache Doris mampu melayani ribuan query secara bersamaan sehingga sa
 ---
 
 # Alur Data (Lakehouse Flow)
+<img width="1774" height="887" alt="datalake-flow" src="https://github.com/user-attachments/assets/39787343-726f-4358-9007-f1517a725f71" />
+
 
 
 
